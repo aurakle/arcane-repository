@@ -46,7 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static dev.enjarai.arcane_repository.block.ModTags.INDEX_INTRACTABLE;
+import static dev.enjarai.arcane_repository.block.ModTags.INDEX_INTERACTABLE;
 import static dev.enjarai.arcane_repository.block.entity.MysticalLecternBlockEntity.LECTERN_DETECTION_RADIUS;
 import static dev.enjarai.arcane_repository.item.ModItems.INDEXING_TYPE_PAGE;
 import static net.minecraft.block.LecternBlock.HAS_BOOK;
@@ -176,7 +176,7 @@ public class IndexingTypePage extends TypePageItem implements ItemInsertableType
     }
 
     public boolean isLinkableBlock(ItemStack book, BlockState state) {
-        return state.isIn(INDEX_INTRACTABLE);
+        return state.isIn(INDEX_INTERACTABLE);
     }
 
     @Override

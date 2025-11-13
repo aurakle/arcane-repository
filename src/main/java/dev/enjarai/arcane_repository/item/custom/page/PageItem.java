@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import dev.enjarai.arcane_repository.block.entity.MysticalLecternBlockEntity;
 import dev.enjarai.arcane_repository.item.ModDataComponentTypes;
+import dev.enjarai.arcane_repository.item.custom.page.attribute.FilterPage;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -82,6 +83,20 @@ public abstract class PageItem extends Item {
 
     public NbtCompound getAttributes(ItemStack book) {
         return book.getOrDefault(ModDataComponentTypes.PAGE_ITEM_ATTRIBUTES, new NbtCompound());
+    }
+
+    public boolean isFiltered(ItemStack book) {
+        var filter = getAttributes(book).get(FilterPage.FILTER);
+
+        return filter.isPresent();
+    }
+
+    public boolean doesFilterPermit(ItemStack book, ItemStack stack) {
+        var filter = getAttributes(book).get(FilterPage.FILTER);
+
+        return filter
+                .map(f -> f.items().contains(stack.getItem()) ? f.isWhitelist() : f.isBlacklist())
+                .orElse(true);
     }
 
     @Override

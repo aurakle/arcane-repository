@@ -1,6 +1,6 @@
 plugins {
-	id 'fabric-loom' version '1.8-SNAPSHOT'
-	id 'maven-publish'
+    id 'fabric-loom' version '1.8-SNAPSHOT'
+    id 'maven-publish'
 }
 
 sourceCompatibility = JavaVersion.VERSION_21
@@ -11,106 +11,108 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
-	maven { url = "https://maven.enjarai.dev/mirrors" }
-	maven { url = "https://maven.enjarai.dev/releases" }
+    maven { url = "https://maven.enjarai.dev/mirrors" }
+    maven { url = "https://maven.enjarai.dev/releases" }
 
-	// Lavender
-	maven { url 'https://maven.wispforest.io/releases' }
+    // Lavender
+    maven { url 'https://maven.wispforest.io/releases' }
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // To change the versions see the gradle.properties file
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // Fabric API. This is technically optional, but you probably want it anyway.
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	include modImplementation("nl.enjarai:cicada-lib:${project.cicada_version}") {
-		exclude group: "net.fabricmc.fabric-api"
-	}
+    annotationProcessor modApi("io.wispforest:owo-lib:${property('deps.owo')}")
+    include "io.wispforest:owo-sentinel:${property('deps.owo')}"
 
-	modImplementation include("io.wispforest:lavender:${project.lavender_version}")
-	include "io.wispforest:owo-sentinel:${project.owo_version}"
+    include modImplementation("nl.enjarai:cicada-lib:${property('deps.cicada')}") {
+    	exclude group: "net.fabricmc.fabric-api"
+    }
+
+    modImplementation include("io.wispforest:lavender:${property('deps.lavender')}")
 }
 
 version = "${rootProject.mod_version}+${rootProject.minecraft_version}"
 
 processResources {
-	inputs.property "version", project.version
+    inputs.property "version", project.version
 
-	filesMatching("fabric.mod.json") {
-		expand "version": project.version
-	}
+    filesMatching("fabric.mod.json") {
+    	expand "version": project.version
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
-	// Minecraft 1.20.5 upwards uses Java 21.
-	it.options.release = 21
+    // Minecraft 1.20.5 upwards uses Java 21.
+    it.options.release = 21
 }
 
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
+    withSourcesJar()
 }
 
 jar {
-	from("LICENSE") {
-		rename { "${it}_${project.archivesBaseName}"}
-	}
+    from("LICENSE") {
+    	rename { "${it}_${project.archivesBaseName}"}
+    }
 }
 
 // configure the maven publication
 publishing {
-	repositories {
-		maven {
-			name = "enjaraiMaven"
-			url = "https://maven.enjarai.dev/releases"
-			credentials(PasswordCredentials)
-			authentication {
-				basic(BasicAuthentication)
-			}
-		}
-	}
+    repositories {
+    	maven {
+    		name = "enjaraiMaven"
+    		url = "https://maven.enjarai.dev/releases"
+    		credentials(PasswordCredentials)
+    		authentication {
+    			basic(BasicAuthentication)
+    		}
+    	}
+    }
 
-	publications {
-		mavenJava(MavenPublication) {
-			groupId = project.maven_group
-			artifactId = archivesBaseName
-			version = project.version
+    publications {
+    	mavenJava(MavenPublication) {
+    		groupId = project.maven_group
+    		artifactId = archivesBaseName
+    		version = project.version
 
-			from components.java
-		}
-	}
+    		from components.java
+    	}
+    }
 }
 
 loom {
-	runs {
-		// This adds a new gradle task that runs the datagen API: "gradlew runDatagenClient"
-		datagenClient {
-			inherit client
-			name "Data Generation"
-			vmArg "-Dfabric-api.datagen"
-			vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
-			vmArg "-Dfabric-api.datagen.strict-validation"
+    runs {
+    	// This adds a new gradle task that runs the datagen API: "gradlew runDatagenClient"
+    	datagenClient {
+    		inherit client
+    		name "Data Generation"
+    		vmArg "-Dfabric-api.datagen"
+    		vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
+    		vmArg "-Dfabric-api.datagen.strict-validation"
 
-			runDir "build/datagen"
-		}
-	}
+    		runDir "build/datagen"
+    	}
+    }
 
-	accessWidenerPath = file("src/main/resources/arcane_repository.accesswidener")
+    accessWidenerPath = file("src/main/resources/arcane_repository.accesswidener")
 }
 
 // Add the datagenned files into the jar.
 sourceSets {
-	main {
-		resources {
-			srcDirs += [
-					'src/main/generated'
-			]
-		}
-	}
+    main {
+    	resources {
+    		srcDirs += [
+    				'src/main/generated'
+    		]
+    	}
+    }
 }

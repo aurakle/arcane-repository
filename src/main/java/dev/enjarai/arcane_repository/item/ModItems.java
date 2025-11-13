@@ -50,6 +50,8 @@ public class ModItems {
     public static final TypesPage TYPES_PAGE = registerPageItem("types_page", new TypesPage("types"));
     public static final RangePage RANGE_PAGE = registerPageItem("range_page", new RangePage("range"));
     public static final LinksPage LINKS_PAGE = registerPageItem("links_page", new LinksPage("links"));
+    public static final BlacklistPage BLACKLIST_PAGE = registerPageItem("blacklist_page", new BlacklistPage("blacklist"));
+    public static final WhitelistPage WHITELIST_PAGE = registerPageItem("whitelist_page", new WhitelistPage("whitelist"));
     public static final AutoFeedingAttributePage AUTO_FEEDING_ATTRIBUTE_PAGE = registerPageItem("auto_feeding_attribute_page", new AutoFeedingAttributePage("auto_feeding"));
     public static final MagnetismAttributePage MAGNETISM_ATTRIBUTE_PAGE = registerPageItem("magnetism_attribute_page", new MagnetismAttributePage("magnetism"));
     public static final PickupAttributePage PICKUP_ATTRIBUTE_PAGE = registerPageItem("pickup_attribute_page", new PickupAttributePage("pickup"));
@@ -89,6 +91,8 @@ public class ModItems {
             entries.add(TYPES_PAGE);
             entries.add(RANGE_PAGE);
             entries.add(LINKS_PAGE);
+            entries.add(WHITELIST_PAGE);
+            entries.add(BLACKLIST_PAGE);
             entries.add(AUTO_FEEDING_ATTRIBUTE_PAGE);
             entries.add(MAGNETISM_ATTRIBUTE_PAGE);
             entries.add(PICKUP_ATTRIBUTE_PAGE);

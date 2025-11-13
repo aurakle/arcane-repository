@@ -55,7 +55,7 @@ public class MagnetismAttributePage extends AttributePageItem {
             var box = Box.from(target).expand(pickUpRange);
             var entityList = world.getNonSpectatingEntities(ItemEntity.class, box);
             entityList.forEach(item -> {
-                if (typePage.isFilteredTo(stack, item.getStack())) {
+                if (typePage.doesFilterPermit(stack, item.getStack())) {
                     var velocity = item.getPos().relativize(target).normalize().multiply(0.1);
                     item.addVelocity(velocity.x, velocity.y, velocity.z);
                 }

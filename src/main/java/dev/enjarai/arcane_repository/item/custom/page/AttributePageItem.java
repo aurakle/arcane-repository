@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import dev.enjarai.arcane_repository.item.ItemSettings;
 import dev.enjarai.arcane_repository.item.ModDataComponentTypes;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.nbt.NbtCompound;
@@ -23,8 +24,12 @@ public abstract class AttributePageItem extends PageItem implements TypeDependen
         return DataResult.error(() -> "Not an attribute page item");
     }, i -> i);
 
+    public AttributePageItem(Item.Settings settings, String id) {
+        super(settings, id);
+    }
+
     public AttributePageItem(String id) {
-        super(new ItemSettings(), id);
+        this(new ItemSettings(), id);
     }
 
     public static void multiplyIntAttribute(NbtCompound nbt, String attribute, double amount) {

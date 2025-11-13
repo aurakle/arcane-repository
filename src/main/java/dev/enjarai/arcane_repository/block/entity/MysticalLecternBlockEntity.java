@@ -9,11 +9,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.LecternBlock;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.LecternBlockEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
@@ -23,15 +19,11 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Optional;
-
 import static net.minecraft.block.LecternBlock.HAS_BOOK;
 
 public class MysticalLecternBlockEntity extends LecternBlockEntity { // TODO separate IndexingBlockEntity
     public static final double LECTERN_DETECTION_RADIUS = 2d;
 
-    public ArrayList<ItemStack> items = new ArrayList<>();
     public int tick = 0;
     public float bookRotation = 0;
     public float bookRotationTarget = 0;
@@ -45,21 +37,11 @@ public class MysticalLecternBlockEntity extends LecternBlockEntity { // TODO sep
     @Override
     public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
         super.readNbt(nbt, registryLookup);
-        items = nbt.getList("items", NbtElement.COMPOUND_TYPE).stream()
-                .map(NbtCompound.class::cast)
-                .map(nbtCompound -> ItemStack.fromNbt(registryLookup, nbtCompound))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     }
 
     @Override
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
         super.writeNbt(nbt, registryLookup);
-        var itemsNbt = items.stream()
-                .map((stack) -> ItemStack.CODEC.encodeStart(registryLookup.getOps(NbtOps.INSTANCE), stack).getOrThrow())
-                .collect(NbtList::new, NbtList::add, NbtList::addAll);
-        nbt.put("items", itemsNbt);
     }
 
     @Nullable

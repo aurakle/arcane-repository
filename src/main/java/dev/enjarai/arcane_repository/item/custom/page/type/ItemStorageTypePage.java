@@ -5,17 +5,15 @@ import dev.enjarai.arcane_repository.client.tooltip.ItemStorageTooltipData;
 import dev.enjarai.arcane_repository.item.ItemSettings;
 import dev.enjarai.arcane_repository.item.ModDataComponentTypes;
 import dev.enjarai.arcane_repository.item.component.OverstackingStorageComponent;
-import dev.enjarai.arcane_repository.item.component.StorageFilterComponent;
+import dev.enjarai.arcane_repository.item.component.StorageMetadataComponent;
 import dev.enjarai.arcane_repository.util.request.ExtractionRequest;
 import dev.enjarai.arcane_repository.ArcaneRepository;
 import dev.enjarai.arcane_repository.block.entity.MysticalLecternBlockEntity;
-import dev.enjarai.arcane_repository.item.custom.book.MysticalBookItem;
 import dev.enjarai.arcane_repository.item.custom.page.AttributePageItem;
 import dev.enjarai.arcane_repository.item.custom.page.TypePageItem;
+import dev.enjarai.arcane_repository.item.custom.page.attribute.FilterPage;
 import dev.enjarai.arcane_repository.util.BigStack;
 import dev.enjarai.arcane_repository.util.ContentsIndex;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.component.ComponentType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.StackReference;
@@ -30,9 +28,6 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.*;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -41,7 +36,7 @@ import java.util.function.Predicate;
 import static dev.enjarai.arcane_repository.item.ModItems.*;
 
 public class ItemStorageTypePage extends TypePageItem implements ItemInsertableTypePage {
-    private static final ComponentType<StorageFilterComponent> COMPONENT_TYPE = ModDataComponentTypes.STORAGE_FILTERS;
+    private static final ComponentType<StorageMetadataComponent> COMPONENT_TYPE = ModDataComponentTypes.STORAGE_METADATA;
     public static final String MAX_STACKS_TAG = "max_stacks";
     public static final String MAX_TYPES_TAG = "max_types";
 
@@ -49,7 +44,7 @@ public class ItemStorageTypePage extends TypePageItem implements ItemInsertableT
         super(new ItemSettings(), id);
     }
 
-    private StorageFilterComponent getComponent(ItemStack stack) {
+    private StorageMetadataComponent getComponent(ItemStack stack) {
         return stack.get(COMPONENT_TYPE);
     }
 
@@ -73,7 +68,7 @@ public class ItemStorageTypePage extends TypePageItem implements ItemInsertableT
         attributes.putInt(MAX_TYPES_TAG, 4);
 
         book.set(ModDataComponentTypes.PAGE_ITEM_ATTRIBUTES, attributes);
-        book.set(COMPONENT_TYPE, new StorageFilterComponent(List.of(), 0, 0));
+        book.set(COMPONENT_TYPE, new StorageMetadataComponent(0, 0));
         book.set(ModDataComponentTypes.OVERSTACKING_STORAGE, new OverstackingStorageComponent(List.of()));
     }
 
@@ -115,56 +110,6 @@ public class ItemStorageTypePage extends TypePageItem implements ItemInsertableT
                 .findFirst();
     }
 
-    public boolean isFiltered(ItemStack book) {
-        var filters = getComponent(book).items();
-
-        return filters != null && !filters.isEmpty();
-    }
-
-    public boolean isFilteredTo(ItemStack book, ItemStack stack) {
-        var filters = getComponent(book).items();
-
-        return filters != null && filters.contains(stack.getItem());
-    }
-
-    public List<Item> getFilteredItems(ItemStack book) {
-        var filters = getComponent(book).items();
-
-        return filters.stream()
-                .filter(Objects::nonNull)
-                .collect(ImmutableList.toImmutableList());
-    }
-
-    public void addFilteredItem(ItemStack book, Item item) {
-        var component = getComponent(book);
-        var filters = component.items();
-
-        var newFilters = new ArrayList<>(filters);
-        newFilters.add(item);
-
-        book.set(COMPONENT_TYPE, component.withItems(newFilters));
-    }
-
-    public void removeFilteredItem(ItemStack book, int i) {
-        var component = getComponent(book);
-        var filters = component.items();
-
-        var newFilters = new ArrayList<>(filters);
-        newFilters.remove(i);
-
-        book.set(COMPONENT_TYPE, component.withItems(newFilters));
-    }
-
-    public void clearFilteredItems(ItemStack book) {
-        book.set(COMPONENT_TYPE, getComponent(book).withItems(List.of()));
-    }
-
-    public void setFilteredItems(ItemStack book, List<Item> items) {
-        var newFilters = ImmutableList.copyOf(items);
-
-        book.set(COMPONENT_TYPE, getComponent(book).withItems(newFilters));
-    }
-
     protected boolean canInsert(ItemStack book, ItemStack itemStack) {
         return itemStack.getItem().canBeNested();
     }
@@ -173,7 +118,7 @@ public class ItemStorageTypePage extends TypePageItem implements ItemInsertableT
         if (!canInsert(book, itemStack)) return false;
 
         if (!isFiltered(book)) return true;
-        return isFilteredTo(book, itemStack);
+        return doesFilterPermit(book, itemStack);
     }
 
     protected int getBaseInsertPriority(ItemStack book) {
@@ -183,7 +128,7 @@ public class ItemStorageTypePage extends TypePageItem implements ItemInsertableT
     public int getInsertPriority(ItemStack book, ItemStack stack) {
         if (!canInsertFiltered(book, stack)) return -1;
         var base = getBaseInsertPriority(book);
-        if (isFilteredTo(book, stack)) return base + 100;
+        if (doesFilterPermit(book, stack)) return base + 100;
         return base;
     }
 
@@ -403,17 +348,17 @@ public class ItemStorageTypePage extends TypePageItem implements ItemInsertableT
 
     @Override
     public void book$appendTooltip(ItemStack book, @Nullable TooltipContext world, List<Text> tooltip, TooltipType type) {
-        if (isFiltered(book)) {
+        var filter = getAttributes(book).get(FilterPage.FILTER);
+        filter.ifPresent(f -> {
             tooltip.add(Text.literal(""));
-            tooltip.add(Text.translatable("item.arcane_repository.repository_book.tooltip.type.item_storage.filtered")
+            tooltip.add(Text.translatable("item.arcane_repository.page.tooltip.attribute." + (f.isBlacklist() ? "blacklist" : "whitelist"))
+                    .append(":")
                     .formatted(Formatting.GRAY));
 
-            tooltip.addAll(getFilteredItems(book).stream()
-                    .map(Item::getName)
-                    .map(text -> Text.literal(" ").append(text).formatted(Formatting.GRAY))
-                    .toList()
-            );
-        }
+            for (var item : f.items()) {
+                tooltip.add(Text.literal(" ").append(item.getName()).formatted(Formatting.GRAY));
+            }
+        });
     }
 
     @Override
@@ -460,49 +405,6 @@ public class ItemStorageTypePage extends TypePageItem implements ItemInsertableT
     @Override
     public Optional<TooltipData> book$getTooltipData(ItemStack book) {
         return Optional.of(new ItemStorageTooltipData(getContents(book)));
-    }
-
-    @Override
-    public ItemActionResult lectern$onUseWithItem(MysticalLecternBlockEntity lectern, ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        var book = lectern.getBook();
-
-        if (stack.getItem() instanceof MysticalBookItem bookItem) {
-            if (bookItem.getTypePage(stack).orElse(null) instanceof ItemStorageTypePage handPage) {
-                var ownFilters = getFilteredItems(book);
-                handPage.setFilteredItems(stack, ownFilters);
-                player.sendMessage(Text.translatable("chat.arcane_repository.copied_filters"), true);
-                return ItemActionResult.SUCCESS;
-            }
-        } else {
-            if (!(canInsert(book, stack) || stack.isEmpty())) return ItemActionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
-
-            var filters = getFilteredItems(book);
-            var i = stack.isEmpty() ? filters.size() - 1 : filters.indexOf(stack.getItem());
-
-            if (i == -1) {
-                if (stack.isEmpty()) return ItemActionResult.CONSUME;
-
-                addFilteredItem(book, stack.getItem());
-                lectern.items.add(stack.getItem().getDefaultStack());
-            } else {
-                removeFilteredItem(book, i);
-                lectern.items.remove(i);
-            }
-
-            lectern.markDirty();
-            world.updateListeners(pos, state, state, Block.NOTIFY_LISTENERS);
-
-            return ItemActionResult.success(world.isClient());
-        }
-
-        return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-    }
-
-    @Override
-    public void lectern$onPlaced(MysticalLecternBlockEntity lectern) {
-        lectern.items = getFilteredItems(lectern.getBook()).stream()
-                .map(Item::getDefaultStack)
-                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     }
 
     public static abstract class ItemStorageAttributePage extends AttributePageItem {

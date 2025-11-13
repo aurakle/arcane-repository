@@ -37,7 +37,7 @@ public class LibraryIndex implements IndexInteractable {
                 for (int y = -searchRange; y <= searchRange; y++) {
                     BlockPos testPos = pos.add(x, y, z);
 
-                    if (world.getBlockState(testPos).isIn(ModTags.INDEX_INTRACTABLE) &&
+                    if (world.getBlockState(testPos).isIn(ModTags.INDEX_INTERACTABLE) &&
                             world.getBlockEntity(testPos) instanceof IndexInteractable entity) {
                         result.add(entity, particles ? WorldEffects::registrationParticles : i -> {});
                     }

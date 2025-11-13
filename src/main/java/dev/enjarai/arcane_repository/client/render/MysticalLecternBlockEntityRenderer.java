@@ -52,26 +52,6 @@ public class MysticalLecternBlockEntityRenderer implements BlockEntityRenderer<M
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-g));
         matrices.multiply(RotationAxis.POSITIVE_Y.rotation(-bookRotation));
 
-        var itemCount = be.items.size();
-        for (int i = 0; i < itemCount; i++) {
-            matrices.push();
-
-            var itemStack = be.items.get(i);
-            var offset = (2 * Math.PI) / itemCount * i;
-            var animationPos = offset + anim / 20;
-
-            matrices.translate(0.2, 0.18, 0);
-            var itemX = ITEMS_RADIUS * Math.cos(animationPos);
-            var itemZ = ITEMS_RADIUS * Math.sin(animationPos);
-            matrices.translate(itemX, itemX * -0.35, itemZ);
-            matrices.multiply(RotationAxis.POSITIVE_Y.rotation(anim * 0.05f));
-            matrices.scale(0.75f, 0.75f, 0.75f);
-            MinecraftClient.getInstance().getItemRenderer()
-                    .renderItem(itemStack, ModelTransformationMode.GROUND, light, overlay, matrices, vertexConsumers, be.getWorld(), 0);
-
-            matrices.pop();
-        }
-
         matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(67.5f));
         matrices.translate(0.0, -0.125, 0.0);
         this.book.setPageAngles(0.0f, 0.1f, 0.9f, 1.2f);
